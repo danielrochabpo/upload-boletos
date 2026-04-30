@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Envio de Boletos – Agendamento de Pagamentos</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, sans-serif;
+    background: #EEF2F7;
+    min-height: 100vh;
+    color: #1e293b;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1B3A6B 0%, #2563EB 100%);
+    color: white;
+    padding: 18px 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.2);
+  }
+
+  .header-inner {
+    max-width: 680px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .header-icon {
+    width: 46px; height: 46px;
+    background: rgba(255,255,255,.18);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+
+  .header-text h1 { font-size: 1.125rem; font-weight: 700; }
+  .header-text p  { font-size: .8125rem; opacity: .78; margin-top: 2px; }
+
+  main {
+    max-width: 680px;
+    margin: 28px auto 40px;
+    padding: 0 16px;
+  }
+
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07), 0 6px 20px rgba(0,0,0,.06);
+  }
+
+  .card-title {
+    font-size: 1.125rem; font-weight: 700;
+    color: #1B3A6B; margin-bottom: 6px;
+  }
+
+  .card-sub {
+    font-size: .875rem; color: #64748b;
+    line-height: 1.55; margin-bottom: 28px;
+  }
+
+  /* ── Form ─────────────────────────────────── */
+  .form-group { margin-bottom: 20px; }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 520px) {
+    .form-row { grid-template-columns: 1fr; }
+    .card { padding: 24px 18px; }
+  }
+
+  label {
+    display: block;
+    font-size: .8125rem; font-weight: 600;
+    color: #374151; margin-bottom: 6px;
+    letter-spacing: .01em;
+  }
+
+  label .req { color: #ef4444; margin-left: 2px; }
+
+  input[type=text],
+  input[type=email],
+  textarea {
+    width: 100%;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: .9375rem;
+    color: #1e293b;
+    background: #fff;
+    transition: border-color .15s, box-shadow .15s;
+    outline: none;
+    font-family: inherit;
+  }
+
+  input[type=text]:focus,
+  input[type=email]:focus,
+  textarea:focus {
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.13);
+  }
+
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* ── Drop zone ───────────────────────────── */
+  .drop-zone {
+    border: 2px dashed #c7d4e2;
+    border-radius: 12px;
+    padding: 34px 20px;
+    text-align: center;
+    cursor: pointer;
+    background: #F8FAFC;
+    position: relative;
+    transition: border-color .2s, background .2s;
+  }
+
+  .drop-zone:hover,
+  .drop-zone.over {
+    border-color: #2563EB;
+    background: #EFF6FF;
+  }
+
+  .drop-zone input[type=file] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer;
+    width: 100%; height: 100%;
+  }
+
+  .dz-icon { font-size: 2.25rem; margin-bottom: 10px; }
+  .dz-text { font-size: .9375rem; color: #475569; margin-bottom: 5px; }
+  .dz-text strong { color: #2563EB; }
+  .dz-hint { font-size: .8rem; color: #94a3b8; }
+
+  /* ── File list ───────────────────────────── */
+  .file-list { margin-top: 10px; display: flex; flex-direction: column; gap: 7px; }
+
+  .file-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 13px;
+    background: #F1F5F9; border-radius: 8px;
+    font-size: .875rem;
+  }
+
+  .fi-icon { font-size: 1.2rem; flex-shrink: 0; }
+  .fi-name { flex: 1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fi-size { color: #94a3b8; font-size: .8125rem; flex-shrink: 0; }
+
+  .fi-remove {
+    width: 24px; height: 24px; border-radius: 50%;
+    border: none; background: none; cursor: pointer;
+    color: #94a3b8; font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s; flex-shrink: 0;
+  }
+  .fi-remove:hover { background: #fee2e2; color: #ef4444; }
+
+  /* ── Progress ────────────────────────────── */
+  .progress-wrap { margin: 20px 0; display: none; }
+
+  .progress-bar {
+    height: 8px; background: #e2e8f0;
+    border-radius: 99px; overflow: hidden; margin-bottom: 8px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #1B3A6B, #2563EB, #06B6D4);
+    border-radius: 99px;
+    width: 0%;
+    transition: width .25s ease;
+  }
+
+  .progress-label { font-size: .8125rem; color: #64748b; text-align: center; }
+
+  /* ── Alert ───────────────────────────────── */
+  .alert {
+    padding: 12px 16px; border-radius: 8px;
+    font-size: .875rem; margin-bottom: 18px;
+    display: none; align-items: flex-start; gap: 8px;
+    line-height: 1.4;
+  }
+  .alert-error   { background: #FEF2F2; color: #991B1B; border: 1px solid #FCA5A5; }
+  .alert-success { background: #F0FDF4; color: #14532D; border: 1px solid #86EFAC; }
+
+  /* ── Submit button ───────────────────────── */
+  .btn-submit {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, #1B3A6B, #2563EB);
+    color: white; border: none; border-radius: 10px;
+    font-size: 1rem; font-weight: 600;
+    cursor: pointer; margin-top: 6px;
+    letter-spacing: .01em;
+    transition: opacity .2s, transform .1s;
+  }
+  .btn-submit:hover:not(:disabled) { opacity: .88; }
+  .btn-submit:active:not(:disabled) { transform: scale(.99); }
+  .btn-submit:disabled { opacity: .55; cursor: not-allowed; }
+
+  /* ── Success screen ──────────────────────── */
+  .success-screen {
+    text-align: center; padding: 20px 0; display: none;
+  }
+  .ss-icon  { font-size: 3.75rem; margin-bottom: 14px; }
+  .ss-title { font-size: 1.25rem; font-weight: 700; color: #15803d; margin-bottom: 8px; }
+  .ss-msg   { color: #64748b; font-size: .9375rem; line-height: 1.6; margin-bottom: 24px; }
+
+  .btn-new {
+    padding: 10px 28px;
+    background: white; color: #1B3A6B;
+    border: 2px solid #1B3A6B; border-radius: 8px;
+    font-size: .9375rem; font-weight: 600;
+    cursor: pointer; transition: background .15s, color .15s;
+  }
+  .btn-new:hover { background: #1B3A6B; color: white; }
+
+  footer {
+    text-align: center;
+    padding: 20px 16px 32px;
+    font-size: .8rem; color: #94a3b8;
+  }
+
+  .badge-secure {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #F0FDF4; color: #15803d;
+    border: 1px solid #86EFAC;
+    padding: 4px 10px; border-radius: 99px;
+    font-size: .75rem; font-weight: 600;
+    margin-bottom: 20px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-icon">📄</div>
+    <div class="header-text">
+      <h1>Agendamento de Pagamentos</h1>
+      <p>Envio seguro de boletos e documentos financeiros</p>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="card">
+
+    <!-- Tela de sucesso -->
+    <div id="successScreen" class="success-screen">
+      <div class="ss-icon">✅</div>
+      <h3 class="ss-title">Documentos enviados com sucesso!</h3>
+      <p class="ss-msg">
+        Seus arquivos foram recebidos com segurança.<br>
+        Em breve entraremos em contato para confirmar o agendamento.
+      </p>
+      <button class="btn-new" onclick="resetForm()">Enviar novos documentos</button>
+    </div>
+
+    <!-- Formulário -->
+    <form id="uploadForm">
+      <h2 class="card-title">Enviar Documentos</h2>
+      <p class="card-sub">Preencha os dados abaixo e anexe os boletos ou arquivos para agendamento de pagamentos. Todas as informações são transmitidas com segurança.</p>
+
+      <div class="badge-secure">🔒 Envio Seguro e Criptografado</div>
+
+      <div id="alertBox" class="alert"></div>
+
+      <div class="form-group">
+        <label>Nome / Razão Social <span class="req">*</span></label>
+        <input type="text" name="nome" placeholder="Ex: Empresa XYZ Ltda" required autocomplete="organization">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label>CPF / CNPJ</label>
+          <input type="text" name="cpfCnpj" placeholder="00.000.000/0001-00" maxlength="18" autocomplete="off" id="cpfCnpjInput">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>E-mail para contato</label>
+          <input type="email" name="email" placeholder="contato@empresa.com" autocomplete="email">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:20px">
+        <label>Descrição / Observações</label>
+        <textarea name="descricao" placeholder="Ex: 3 boletos referentes ao mês de abril/2026, vencimento dia 10..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Arquivos <span class="req">*</span></label>
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="fileInput" multiple
+            accept=".pdf,.jpg,.jpeg,.png,.tiff,.bmp,.xlsx,.xls,.csv,.doc,.docx">
+          <div class="dz-icon">📂</div>
+          <p class="dz-text">Arraste os arquivos aqui ou <strong>clique para selecionar</strong></p>
+          <p class="dz-hint">PDF, JPG, PNG, XLSX, DOC &nbsp;·&nbsp; Máx. 50 MB por arquivo &nbsp;·&nbsp; Até 20 arquivos</p>
+        </div>
+        <div class="file-list" id="fileList"></div>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <p class="progress-label" id="progressLabel">Enviando...</p>
+      </div>
+
+      <button type="submit" class="btn-submit" id="submitBtn">
+        Enviar Documentos
+      </button>
+    </form>
+
+  </div>
+</main>
+
+<footer>
+  <p>🔒 Seus arquivos são transmitidos com criptografia e armazenados com segurança.</p>
+</footer>
+
+<script>
+const dropZone    = document.getElementById('dropZone');
+const fileInput   = document.getElementById('fileInput');
+const fileListEl  = document.getElementById('fileList');
+const form        = document.getElementById('uploadForm');
+const submitBtn   = document.getElementById('submitBtn');
+const progressWrap = document.getElementById('progressWrap');
+const progressFill = document.getElementById('progressFill');
+const progressLabel = document.getElementById('progressLabel');
+const alertBox    = document.getElementById('alertBox');
+const successScreen = document.getElementById('successScreen');
+
+let selectedFiles = [];
+
+const ALLOWED = new Set(['.pdf','.jpg','.jpeg','.png','.tiff','.bmp','.xlsx','.xls','.csv','.doc','.docx']);
+const MAX_SIZE = 50 * 1024 * 1024;
+
+function fileIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  if (ext === 'pdf') return '📄';
+  if (['jpg','jpeg','png','tiff','bmp'].includes(ext)) return '🖼️';
+  if (['xlsx','xls','csv'].includes(ext)) return '📊';
+  if (['doc','docx'].includes(ext)) return '📝';
+  return '📎';
+}
+
+function fmtSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+  return (b/(1024*1024)).toFixed(1) + ' MB';
+}
+
+function addFiles(list) {
+  for (const file of list) {
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    if (!ALLOWED.has(ext)) { showAlert(`Tipo não permitido: ${file.name}`, 'error'); continue; }
+    if (file.size > MAX_SIZE) { showAlert(`Arquivo muito grande: ${file.name} (máx. 50 MB)`, 'error'); continue; }
+    if (selectedFiles.length >= 20) { showAlert('Máximo de 20 arquivos por envio.', 'error'); break; }
+    if (!selectedFiles.some(f => f.name === file.name && f.size === file.size))
+      selectedFiles.push(file);
+  }
+  renderList();
+}
+
+function renderList() {
+  fileListEl.innerHTML = '';
+  selectedFiles.forEach((file, i) => {
+    const div = document.createElement('div');
+    div.className = 'file-item';
+    div.innerHTML = `
+      <span class="fi-icon">${fileIcon(file.name)}</span>
+      <span class="fi-name" title="${file.name}">${file.name}</span>
+      <span class="fi-size">${fmtSize(file.size)}</span>
+      <button type="button" class="fi-remove" onclick="removeFile(${i})" title="Remover">✕</button>`;
+    fileListEl.appendChild(div);
+  });
+}
+
+function removeFile(i) { selectedFiles.splice(i, 1); renderList(); }
+
+function showAlert(msg, type) {
+  alertBox.textContent = msg;
+  alertBox.className = `alert alert-${type}`;
+  alertBox.style.display = 'flex';
+  setTimeout(() => alertBox.style.display = 'none', 6000);
+}
+
+// Drag & drop
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('over');
+  addFiles(Array.from(e.dataTransfer.files));
+});
+fileInput.addEventListener('change', () => {
+  addFiles(Array.from(fileInput.files));
+  fileInput.value = '';
+});
+
+// Máscara CPF/CNPJ
+document.getElementById('cpfCnpjInput').addEventListener('input', function () {
+  let v = this.value.replace(/\D/g, '');
+  if (v.length <= 11) {
+    v = v.replace(/(\d{3})(\d)/, '$1.$2')
+         .replace(/(\d{3})(\d)/, '$1.$2')
+         .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  } else {
+    v = v.replace(/(\d{2})(\d)/, '$1.$2')
+         .replace(/(\d{3})(\d)/, '$1.$2')
+         .replace(/(\d{3})(\d)/, '$1/$2')
+         .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+  }
+  this.value = v;
+});
+
+// Submit
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  alertBox.style.display = 'none';
+
+  if (!selectedFiles.length) {
+    showAlert('Selecione pelo menos um arquivo para enviar.', 'error');
+    return;
+  }
+
+  const fd = new FormData(form);
+  fd.delete('arquivos');
+  selectedFiles.forEach(f => fd.append('arquivos', f));
+
+  submitBtn.disabled = true;
+  progressWrap.style.display = 'block';
+  progressFill.style.width = '0%';
+  progressLabel.textContent = 'Preparando envio...';
+
+  const xhr = new XMLHttpRequest();
+
+  xhr.upload.addEventListener('progress', ev => {
+    if (ev.lengthComputable) {
+      const pct = Math.round(ev.loaded / ev.total * 100);
+      progressFill.style.width = pct + '%';
+      progressLabel.textContent = `Enviando... ${pct}%`;
+    }
+  });
+
+  xhr.addEventListener('load', () => {
+    progressWrap.style.display = 'none';
+    submitBtn.disabled = false;
+    try {
+      const r = JSON.parse(xhr.responseText);
+      if (r.success) {
+        form.style.display = 'none';
+        successScreen.style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        showAlert(r.message || 'Erro ao enviar. Tente novamente.', 'error');
+      }
+    } catch {
+      showAlert('Erro inesperado. Tente novamente.', 'error');
+    }
+  });
+
+  xhr.addEventListener('error', () => {
+    progressWrap.style.display = 'none';
+    submitBtn.disabled = false;
+    showAlert('Falha na conexão. Verifique sua internet e tente novamente.', 'error');
+  });
+
+  xhr.open('POST', '/upload');
+  xhr.send(fd);
+});
+
+function resetForm() {
+  form.reset();
+  selectedFiles = [];
+  renderList();
+  form.style.display = 'block';
+  successScreen.style.display = 'none';
+  alertBox.style.display = 'none';
+}
+</script>
+</body>
+</html>

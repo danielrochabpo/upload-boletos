@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Administrativo – Boletos</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #EEF2F7;
+    min-height: 100vh;
+    color: #1e293b;
+  }
+
+  /* ── Header ──────────────────────────────── */
+  header {
+    background: linear-gradient(135deg, #1B3A6B, #2563EB);
+    color: white; padding: 0 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.2);
+    position: sticky; top: 0; z-index: 100;
+  }
+
+  .header-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; align-items: center;
+    height: 60px; gap: 14px;
+  }
+
+  .brand { display: flex; align-items: center; gap: 10px; flex: 1; }
+  .brand-icon {
+    width: 38px; height: 38px;
+    background: rgba(255,255,255,.18); border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .brand h1 { font-size: 1rem; font-weight: 700; }
+  .brand p  { font-size: .75rem; opacity: .75; }
+
+  .btn-logout {
+    padding: 7px 16px; border-radius: 7px;
+    background: rgba(255,255,255,.15); color: white;
+    border: 1px solid rgba(255,255,255,.3);
+    font-size: .8125rem; font-weight: 600;
+    cursor: pointer; transition: background .15s;
+    white-space: nowrap;
+  }
+  .btn-logout:hover { background: rgba(255,255,255,.25); }
+
+  /* ── Main ────────────────────────────────── */
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+
+  /* ── Stats ───────────────────────────────── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px; margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: white; border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.07);
+    display: flex; flex-direction: column; gap: 6px;
+  }
+
+  .stat-label { font-size: .75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .06em; }
+  .stat-value { font-size: 1.75rem; font-weight: 800; color: #1B3A6B; line-height: 1; }
+  .stat-sub   { font-size: .75rem; color: #94a3b8; }
+
+  /* ── Toolbar ─────────────────────────────── */
+  .toolbar {
+    display: flex; gap: 12px; margin-bottom: 18px;
+    flex-wrap: wrap; align-items: center;
+  }
+
+  .search-input {
+    flex: 1; min-width: 200px;
+    border: 1.5px solid #e2e8f0; border-radius: 9px;
+    padding: 9px 14px 9px 38px;
+    font-size: .9rem; outline: none;
+    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0'/%3E%3C/svg%3E") no-repeat 12px center;
+    transition: border-color .15s, box-shadow .15s;
+    font-family: inherit;
+  }
+
+  .search-input:focus {
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+  }
+
+  .btn-dl-all {
+    padding: 9px 18px; border-radius: 9px;
+    background: #1B3A6B; color: white;
+    border: none; font-size: .875rem; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+    display: flex; align-items: center; gap: 6px;
+    transition: opacity .15s;
+  }
+  .btn-dl-all:hover { opacity: .85; }
+  .btn-dl-all:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── Upload cards ────────────────────────── */
+  .upload-card {
+    background: white; border-radius: 12px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.07);
+    overflow: hidden;
+    transition: box-shadow .15s;
+  }
+  .upload-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,.11); }
+
+  .card-header {
+    display: flex; align-items: center;
+    padding: 16px 20px; gap: 14px; cursor: pointer;
+    user-select: none;
+  }
+
+  .card-avatar {
+    width: 42px; height: 42px; border-radius: 10px;
+    background: linear-gradient(135deg, #1B3A6B, #2563EB);
+    color: white; font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-weight: 700;
+  }
+
+  .card-info { flex: 1; min-width: 0; }
+  .card-nome { font-size: .9375rem; font-weight: 700; color: #1e293b; }
+  .card-meta { font-size: .8rem; color: #64748b; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .card-meta span { display: flex; align-items: center; gap: 3px; }
+
+  .card-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+  .badge {
+    padding: 3px 9px; border-radius: 99px;
+    font-size: .75rem; font-weight: 600;
+    background: #EFF6FF; color: #1B3A6B;
+    white-space: nowrap;
+  }
+
+  .btn-zip {
+    padding: 7px 14px; border-radius: 7px;
+    background: #2563EB; color: white;
+    border: none; font-size: .8125rem; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 5px;
+    transition: opacity .15s; white-space: nowrap;
+  }
+  .btn-zip:hover { opacity: .85; }
+
+  .btn-del {
+    width: 34px; height: 34px; border-radius: 7px;
+    background: none; color: #94a3b8;
+    border: 1.5px solid #e2e8f0;
+    cursor: pointer; font-size: .9rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .btn-del:hover { background: #FEF2F2; color: #ef4444; border-color: #FCA5A5; }
+
+  .chevron {
+    color: #94a3b8; font-size: .9rem; transition: transform .2s;
+  }
+  .card-header.open .chevron { transform: rotate(180deg); }
+
+  /* ── File list (expanded) ─────────────────── */
+  .card-files { display: none; border-top: 1px solid #F1F5F9; }
+  .card-files.open { display: block; }
+
+  .descricao-box {
+    background: #FFFBEB; border-top: 1px solid #FDE68A;
+    padding: 10px 20px;
+    font-size: .875rem; color: #78350F; line-height: 1.5;
+  }
+  .descricao-box strong { display: block; margin-bottom: 2px; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
+
+  .file-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 20px; border-bottom: 1px solid #F8FAFC;
+    font-size: .875rem;
+  }
+  .file-row:last-child { border-bottom: none; }
+  .file-row .fi-icon { font-size: 1.125rem; flex-shrink: 0; }
+  .file-row .fi-name { flex: 1; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-row .fi-size { color: #94a3b8; font-size: .8rem; flex-shrink: 0; }
+
+  .btn-dl-file {
+    padding: 5px 12px; border-radius: 6px;
+    background: #EFF6FF; color: #1B3A6B;
+    border: 1px solid #BFDBFE;
+    font-size: .8rem; font-weight: 600; cursor: pointer;
+    white-space: nowrap; transition: background .15s;
+    text-decoration: none; flex-shrink: 0;
+  }
+  .btn-dl-file:hover { background: #DBEAFE; }
+
+  /* ── Empty / loading / error ─────────────── */
+  .state-box {
+    text-align: center; padding: 60px 20px;
+    color: #94a3b8;
+  }
+  .state-box .st-icon { font-size: 3rem; margin-bottom: 14px; }
+  .state-box p { font-size: .9375rem; }
+
+  /* ── Confirm modal ───────────────────────── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    display: none; align-items: center; justify-content: center;
+    z-index: 999;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: white; border-radius: 14px;
+    padding: 28px 28px 24px;
+    max-width: 360px; width: 90%;
+    box-shadow: 0 16px 48px rgba(0,0,0,.2);
+    text-align: center;
+  }
+  .modal-icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .modal h3 { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+  .modal p  { font-size: .875rem; color: #64748b; margin-bottom: 22px; }
+
+  .modal-btns { display: flex; gap: 10px; justify-content: center; }
+
+  .btn-cancel {
+    padding: 9px 20px; border-radius: 8px;
+    background: #F1F5F9; color: #475569;
+    border: none; font-size: .9rem; font-weight: 600; cursor: pointer;
+  }
+  .btn-confirm-del {
+    padding: 9px 20px; border-radius: 8px;
+    background: #EF4444; color: white;
+    border: none; font-size: .9rem; font-weight: 600; cursor: pointer;
+    transition: opacity .15s;
+  }
+  .btn-confirm-del:hover { opacity: .85; }
+
+  @media (max-width: 600px) {
+    .card-right .btn-zip span { display: none; }
+    .stat-value { font-size: 1.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-icon">📁</div>
+      <div>
+        <h1>Painel Administrativo</h1>
+        <p>Gerenciamento de Boletos</p>
+      </div>
+    </div>
+    <button class="btn-logout" id="logoutBtn">Sair 🚪</button>
+  </div>
+</header>
+
+<main>
+  <!-- Stats -->
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card"><div class="stat-label">Carregando...</div><div class="stat-value">–</div></div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <input type="search" class="search-input" id="searchInput" placeholder="Buscar por nome, CPF/CNPJ ou e-mail...">
+    <button class="btn-dl-all" id="downloadAllBtn" title="Baixar todos os envios em ZIP">
+      ⬇ <span>Baixar Todos</span>
+    </button>
+  </div>
+
+  <!-- Upload list -->
+  <div id="uploadList">
+    <div class="state-box">
+      <div class="st-icon">⏳</div>
+      <p>Carregando envios...</p>
+    </div>
+  </div>
+</main>
+
+<!-- Modal de confirmação de exclusão -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <div class="modal-icon">🗑️</div>
+    <h3>Confirmar exclusão</h3>
+    <p id="deleteModalText">Tem certeza que deseja excluir este envio? Esta ação não pode ser desfeita.</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" id="cancelDelete">Cancelar</button>
+      <button class="btn-confirm-del" id="confirmDelete">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let allUploads = [];
+let pendingDelete = null;
+
+// ── Utils ─────────────────────────────────────────────────────────────
+function fmtSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+  return (b/(1024*1024)).toFixed(1) + ' MB';
+}
+
+function fmtDate(iso) {
+  return new Date(iso).toLocaleString('pt-BR', {
+    day:'2-digit', month:'2-digit', year:'numeric',
+    hour:'2-digit', minute:'2-digit', timeZone:'America/Sao_Paulo'
+  });
+}
+
+function isRecent(iso) {
+  return (Date.now() - new Date(iso).getTime()) < 24 * 60 * 60 * 1000;
+}
+
+function fileIcon(name) {
+  const ext = (name || '').split('.').pop().toLowerCase();
+  if (ext === 'pdf') return '📄';
+  if (['jpg','jpeg','png','tiff','bmp'].includes(ext)) return '🖼️';
+  if (['xlsx','xls','csv'].includes(ext)) return '📊';
+  if (['doc','docx'].includes(ext)) return '📝';
+  return '📎';
+}
+
+function initials(name) {
+  return (name || '?').split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
+}
+
+// ── Fetch uploads ─────────────────────────────────────────────────────
+async function loadUploads() {
+  try {
+    const res = await fetch('/admin/api/uploads');
+    if (res.status === 401) { window.location.href = '/admin/login'; return; }
+    const data = await res.json();
+    allUploads = data.uploads || [];
+    renderStats();
+    renderList(allUploads);
+  } catch (e) {
+    document.getElementById('uploadList').innerHTML = `
+      <div class="state-box">
+        <div class="st-icon">⚠️</div>
+        <p>Erro ao carregar envios: ${e.message}</p>
+      </div>`;
+  }
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────
+function renderStats() {
+  const total = allUploads.length;
+  const totalFiles = allUploads.reduce((s, u) => s + u.totalArquivos, 0);
+  const totalSize  = allUploads.reduce((s, u) => s + u.totalTamanho, 0);
+  const recent = allUploads.filter(u => isRecent(u.timestamp)).length;
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total de Envios</div>
+      <div class="stat-value">${total}</div>
+      <div class="stat-sub">clientes enviaram arquivos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Arquivos Recebidos</div>
+      <div class="stat-value">${totalFiles}</div>
+      <div class="stat-sub">${fmtSize(totalSize)} no total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Últimas 24 Horas</div>
+      <div class="stat-value" style="color:${recent > 0 ? '#15803d' : '#1B3A6B'}">${recent}</div>
+      <div class="stat-sub">novo${recent !== 1 ? 's' : ''} envio${recent !== 1 ? 's' : ''}</div>
+    </div>`;
+}
+
+// ── Render list ───────────────────────────────────────────────────────
+function renderList(uploads) {
+  const el = document.getElementById('uploadList');
+
+  if (!uploads.length) {
+    el.innerHTML = `
+      <div class="state-box">
+        <div class="st-icon">📭</div>
+        <p>Nenhum envio encontrado.</p>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = uploads.map(u => {
+    const fileRows = (u.arquivos || []).map(f => `
+      <div class="file-row">
+        <span class="fi-icon">${fileIcon(f.nome)}</span>
+        <span class="fi-name" title="${f.nome}">${f.nome}</span>
+        <span class="fi-size">${fmtSize(f.tamanho || 0)}</span>
+        <a class="btn-dl-file"
+           href="/admin/download/${encodeURIComponent(u.pasta)}/${encodeURIComponent(f.nome)}"
+           download>⬇ Baixar</a>
+      </div>`).join('');
+
+    const descBox = u.descricao
+      ? `<div class="descricao-box"><strong>📝 Observações do cliente</strong>${u.descricao}</div>`
+      : '';
+
+    const newBadge = isRecent(u.timestamp)
+      ? '<span style="background:#F0FDF4;color:#15803d;padding:2px 8px;border-radius:99px;font-size:.7rem;font-weight:700;margin-left:6px">NOVO</span>'
+      : '';
+
+    return `
+      <div class="upload-card" id="card-${CSS.escape(u.pasta)}">
+        <div class="card-header" onclick="toggleCard('${u.pasta.replace(/'/g,"\\'")}', this)">
+          <div class="card-avatar">${initials(u.nome)}</div>
+          <div class="card-info">
+            <div class="card-nome">${u.nome}${newBadge}</div>
+            <div class="card-meta">
+              ${u.cpfCnpj ? `<span>📋 ${u.cpfCnpj}</span>` : ''}
+              ${u.email    ? `<span>✉️ ${u.email}</span>` : ''}
+              <span>🗓️ ${fmtDate(u.timestamp)}</span>
+            </div>
+          </div>
+          <div class="card-right">
+            <span class="badge">${u.totalArquivos} arquivo${u.totalArquivos !== 1 ? 's' : ''} · ${fmtSize(u.totalTamanho)}</span>
+            <button class="btn-zip"
+              onclick="event.stopPropagation(); downloadZip('${u.pasta.replace(/'/g,"\\'")}')">
+              ⬇ <span>ZIP</span>
+            </button>
+            <button class="btn-del"
+              title="Excluir envio"
+              onclick="event.stopPropagation(); askDelete('${u.pasta.replace(/'/g,"\\'")}', '${u.nome.replace(/'/g,"\\'")}')">🗑️</button>
+            <span class="chevron">▼</span>
+          </div>
+        </div>
+        <div class="card-files" id="files-${CSS.escape(u.pasta)}">
+          ${descBox}
+          ${fileRows}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleCard(pasta, headerEl) {
+  const files = document.getElementById(`files-${CSS.escape(pasta)}`);
+  if (!files) return;
+  const isOpen = files.classList.contains('open');
+  files.classList.toggle('open', !isOpen);
+  headerEl.classList.toggle('open', !isOpen);
+}
+
+// ── Download ZIP ──────────────────────────────────────────────────────
+function downloadZip(pasta) {
+  window.location.href = `/admin/download/${encodeURIComponent(pasta)}`;
+}
+
+document.getElementById('downloadAllBtn').addEventListener('click', () => {
+  if (!allUploads.length) return;
+  window.location.href = '/admin/download-all';
+});
+
+// ── Search ────────────────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input', function () {
+  const q = this.value.toLowerCase().trim();
+  const filtered = q
+    ? allUploads.filter(u =>
+        u.nome.toLowerCase().includes(q) ||
+        u.cpfCnpj.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q))
+    : allUploads;
+  renderList(filtered);
+});
+
+// ── Delete ────────────────────────────────────────────────────────────
+function askDelete(pasta, nome) {
+  pendingDelete = pasta;
+  document.getElementById('deleteModalText').textContent =
+    `Tem certeza que deseja excluir o envio de "${nome}"? Esta ação não pode ser desfeita.`;
+  document.getElementById('deleteModal').classList.add('open');
+}
+
+document.getElementById('cancelDelete').addEventListener('click', () => {
+  pendingDelete = null;
+  document.getElementById('deleteModal').classList.remove('open');
+});
+
+document.getElementById('confirmDelete').addEventListener('click', async () => {
+  if (!pendingDelete) return;
+  const pasta = pendingDelete;
+  pendingDelete = null;
+  document.getElementById('deleteModal').classList.remove('open');
+
+  try {
+    const res = await fetch(`/admin/uploads/${encodeURIComponent(pasta)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) {
+      allUploads = allUploads.filter(u => u.pasta !== pasta);
+      renderStats();
+      renderList(allUploads);
+    }
+  } catch (e) {
+    alert('Erro ao excluir: ' + e.message);
+  }
+});
+
+// Fechar modal clicando fora
+document.getElementById('deleteModal').addEventListener('click', function (e) {
+  if (e.target === this) {
+    pendingDelete = null;
+    this.classList.remove('open');
+  }
+});
+
+// ── Logout ────────────────────────────────────────────────────────────
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await fetch('/admin/logout', { method: 'POST' });
+  window.location.href = '/admin/login';
+});
+
+// ── Init ──────────────────────────────────────────────────────────────
+loadUploads();
+
+// Refresh automático a cada 60 segundos
+setInterval(loadUploads, 60 * 1000);
+</script>
+</body>
+</html>

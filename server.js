@@ -107,7 +107,7 @@ app.post('/upload', rateLimit(15 * 60 * 1000, 10), prepareDir, (req, res) => {
       return res.status(400).json({ success: false, message: err.message });
     }
 
-    const { nome, cpfCnpj, email, descricao } = req.body;
+    const { nome, descricoes } = req.body;
 
     if (!nome?.trim()) {
       cleanup();
@@ -118,13 +118,18 @@ app.post('/upload', rateLimit(15 * 60 * 1000, 10), prepareDir, (req, res) => {
       return res.status(400).json({ success: false, message: 'Selecione pelo menos um arquivo.' });
     }
 
+    let descs = [];
+    try { descs = JSON.parse(descricoes || '[]'); } catch {}
+
     const info = {
       nome: nome.trim(),
-      cpfCnpj: cpfCnpj?.trim() || '',
-      email: email?.trim() || '',
-      descricao: descricao?.trim() || '',
       timestamp: new Date().toISOString(),
-      arquivos: req.files.map(f => ({ nome: f.filename, tamanho: f.size, tipo: f.mimetype }))
+      arquivos: req.files.map((f, i) => ({
+        nome: f.filename,
+        tamanho: f.size,
+        tipo: f.mimetype,
+        descricao: (descs[i] || '').trim()
+      }))
     };
 
     fs.writeFileSync(path.join(req.uploadDir, 'info.json'), JSON.stringify(info, null, 2));
@@ -165,7 +170,7 @@ async function sendEmail(info, folderName) {
 
   const fileRows = info.arquivos.map(f =>
     `<tr>
-      <td style="padding:7px 14px;border-bottom:1px solid #eee">${f.nome}</td>
+      <td style="padding:7px 14px;border-bottom:1px solid #eee">${f.nome}${f.descricao ? `<br><span style="font-size:.8rem;color:#2563EB;font-weight:600">${f.descricao}</span>` : ''}</td>
       <td style="padding:7px 14px;border-bottom:1px solid #eee;color:#666;white-space:nowrap">${(f.tamanho / 1024).toFixed(1)} KB</td>
     </tr>`
   ).join('');
@@ -183,9 +188,7 @@ async function sendEmail(info, folderName) {
   <div style="padding:24px 28px;background:#fff">
     <table style="width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.9rem">
       <tr style="background:#F8FAFC"><td style="padding:9px 14px;font-weight:bold;width:130px;color:#374151">Cliente</td><td style="padding:9px 14px">${info.nome}</td></tr>
-      <tr><td style="padding:9px 14px;font-weight:bold;color:#374151">CPF/CNPJ</td><td style="padding:9px 14px">${info.cpfCnpj || '<em style="color:#999">não informado</em>'}</td></tr>
-      <tr style="background:#F8FAFC"><td style="padding:9px 14px;font-weight:bold;color:#374151">E-mail</td><td style="padding:9px 14px">${info.email || '<em style="color:#999">não informado</em>'}</td></tr>
-      <tr><td style="padding:9px 14px;font-weight:bold;color:#374151">Observações</td><td style="padding:9px 14px">${info.descricao || '<em style="color:#999">nenhuma</em>'}</td></tr>
+      <tr><td style="padding:9px 14px;font-weight:bold;color:#374151">Data/Hora</td><td style="padding:9px 14px">${dt}</td></tr>
     </table>
     <h3 style="font-size:.95rem;color:#1B3A6B;margin:0 0 12px">Arquivos recebidos (${info.arquivos.length})</h3>
     <table style="width:100%;border-collapse:collapse;font-size:.875rem;border:1px solid #eee;border-radius:6px;overflow:hidden">

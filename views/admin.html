@@ -181,7 +181,17 @@
   }
   .file-row:last-child { border-bottom: none; }
   .file-row .fi-icon { font-size: 1.125rem; flex-shrink: 0; }
-  .file-row .fi-name { flex: 1; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fi-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .fi-info .fi-name { color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .875rem; }
+  .fi-tag {
+    display: inline-block;
+    background: #EFF6FF; color: #1B4FBE;
+    border: 1px solid #BFDBFE;
+    font-size: .72rem; font-weight: 700;
+    padding: 1px 8px; border-radius: 99px;
+    letter-spacing: .02em;
+    width: fit-content;
+  }
   .file-row .fi-size { color: #94a3b8; font-size: .8rem; flex-shrink: 0; }
 
   .btn-dl-file {
@@ -389,16 +399,15 @@ function renderList(uploads) {
     const fileRows = (u.arquivos || []).map(f => `
       <div class="file-row">
         <span class="fi-icon">${fileIcon(f.nome)}</span>
-        <span class="fi-name" title="${f.nome}">${f.nome}</span>
+        <div class="fi-info">
+          <span class="fi-name" title="${f.nome}">${f.nome}</span>
+          ${f.descricao ? `<span class="fi-tag">${f.descricao}</span>` : ''}
+        </div>
         <span class="fi-size">${fmtSize(f.tamanho || 0)}</span>
         <a class="btn-dl-file"
            href="/admin/download/${encodeURIComponent(u.pasta)}/${encodeURIComponent(f.nome)}"
            download>⬇ Baixar</a>
       </div>`).join('');
-
-    const descBox = u.descricao
-      ? `<div class="descricao-box"><strong>📝 Observações do cliente</strong>${u.descricao}</div>`
-      : '';
 
     const newBadge = isRecent(u.timestamp)
       ? '<span style="background:#F0FDF4;color:#15803d;padding:2px 8px;border-radius:99px;font-size:.7rem;font-weight:700;margin-left:6px">NOVO</span>'
@@ -411,8 +420,6 @@ function renderList(uploads) {
           <div class="card-info">
             <div class="card-nome">${u.nome}${newBadge}</div>
             <div class="card-meta">
-              ${u.cpfCnpj ? `<span>📋 ${u.cpfCnpj}</span>` : ''}
-              ${u.email    ? `<span>✉️ ${u.email}</span>` : ''}
               <span>🗓️ ${fmtDate(u.timestamp)}</span>
             </div>
           </div>

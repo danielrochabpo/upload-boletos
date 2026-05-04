@@ -19,6 +19,7 @@ if (!ADMIN_PASSWORD) {
 
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
+app.set('trust proxy', 1); // Confiar no proxy do Coolify para cookies seguros
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -26,7 +27,11 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'troque-este-segredo',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 8 * 60 * 60 * 1000, sameSite: 'strict' }
+  cookie: { 
+    maxAge: 8 * 60 * 60 * 1000, 
+    sameSite: 'none', 
+    secure: true 
+  }
 }));
 
 // Rate limiter simples em memória
